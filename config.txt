@@ -1,0 +1,3 @@
+toastweb.url = https://localhost:8443/
+admin.email =
+admin.password =
