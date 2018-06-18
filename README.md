@@ -7,8 +7,12 @@ In the file *emails.txt* put a list of the emails for all users that should be p
 
 ## Before a refresh
 
-Run the command `python load_users.py` this will output data for the emails configured in the above step to *users.json*
+Run the command `python load_users.py`.
+
+This will output data for the emails configured in the above step to *users.json*
 
 ## After a refresh
 
-Run the command `python create_users.py` this will the data from the above and use it to recreate sll the users.
+Run the command `python create_users.py`.
+
+This will take the data from the above and use it to recreate all the users.
