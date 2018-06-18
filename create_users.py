@@ -1,22 +1,29 @@
-import uuid
+import json
 
 from toast_web import *
 
-BLACK_SHEEP = '000001ce-21a7-1825-0000-012d75ebda80'
-ROBOELECTRIC_NIGHTCLUB = '8133cc6f-fea1-4e52-992a-2b25d0bf4931'
-
 
 def main():
+    users = load_users()
     auth_token = login_and_get_auth_token()
-    restaurant_id = switch_restaurant(ROBOELECTRIC_NIGHTCLUB)
-    invite_user(auth_token, restaurant_id)
+    for email, restaurants in users.items():
+        for restaurant_guid, data in restaurants['restaurants'].items():
+            restaurant_id = switch_restaurant(restaurant_guid)
+            invite_user(auth_token, email, restaurant_id, data['permissions'])
 
 
-def invite_user(auth_token, restaurant_id):
+def invite_user(auth_token, email, restaurant_id, permissions):
     data = {'authenticityToken': auth_token, 'restaurantId': restaurant_id, 'invite': 'true'}
-    data['user.email'] = 'adambarnes5000+%s@gmail.com' % str(uuid.uuid4()).split('-')[0]
-    http('restaurants/users/invite', data)
+    data['user.email'] = email
+    data.update(permissions)
+    http('/restaurants/users/invite', data)
 
+
+def load_users():
+    file_path = config['users.filepath']
+    print "\nLoading user data from %s" % file_path
+    with open(file_path, 'r') as users_file:
+        return json.load(users_file)
 
 if __name__ == '__main__':
     main()
