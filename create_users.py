@@ -24,7 +24,7 @@ def invite_user(auth_token, email, restaurant_id, permissions):
     if response.find(SUCCESS_TEXT) > -1:
         print '\t\t %s' % SUCCESS_TEXT
     else:
-        print '\t\t Problem inviting user, check logs'
+        print '\t\t Problem inviting user, check server logs'
 
 
 def load_users():

@@ -23,6 +23,7 @@ END_AUTH_TOKEN = '"'
 RESTAURANT_ID_FOOTER_KEY = 'Restaurant Id'
 SET_LEAF_ID_FOOTER_KEY = 'Set Leaf Id'
 
+
 context = ssl.create_default_context()
 context.check_hostname = False
 context.verify_mode = ssl.CERT_NONE
@@ -125,14 +126,13 @@ class RestaurantUserPermissionsExtractor(HTMLParser):
     def handle_starttag(self, startTag, attrs):
         if startTag == 'input':
             attrs_map = dict((x, y) for x, y in attrs)
-            name= attrs_map.get('name', '')
-            if name.startswith('permissions') and (
+            name = attrs_map.get('name', '')
+            if self.should_include(name) and (
                     attrs_map.get('checked') == 'checked' or attrs_map.get('type') == 'hidden'):
-                if name.startswith('permissionsLevel'):
-                    self.permissions[name] = attrs_map['value']
-                else:
-                    values = self.permissions.get(name, [])
-                    values.append(str(attrs_map['value']))
-                    self.permissions[name] = sorted(values)
-            if name.startswith('state'):
-                self.permissions[name] = attrs_map['value']
+                values = self.permissions.get(name, [])
+                values.append(str(attrs_map['value']))
+                self.permissions[name] = sorted(values)
+
+    def should_include(self, name):
+        return len(filter(lambda x: name.lower().find(x) >-1, ['permissions', 'job','state']))>0
+
