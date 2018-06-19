@@ -72,7 +72,7 @@ def output_users(users):
     file_path = config['users.filepath']
     print "\nSaving user data to %s" % file_path
     with open(file_path, 'w') as users_file:
-        json.dump(users, users_file, sort_keys=True, indent=4)
+        json.dump(users, users_file, sort_keys=True, indent=2)
 
 
 if __name__ == '__main__':

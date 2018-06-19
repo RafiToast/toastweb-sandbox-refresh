@@ -3,6 +3,7 @@ import json
 from toast_web import *
 
 SUCCESS_TEXT = 'Invitation was sent successfully'
+ALREADY_EXISTS = 'address already exists'
 
 
 def main():
@@ -23,6 +24,8 @@ def invite_user(auth_token, email, restaurant_id, permissions):
     response = http('/restaurants/users/invite', data)
     if response.find(SUCCESS_TEXT) > -1:
         print '\t\t %s' % SUCCESS_TEXT
+    elif response.find(ALREADY_EXISTS) > -1:
+        print '\t\t A user with that email already exists'
     else:
         print '\t\t Problem inviting user, check server logs'
 

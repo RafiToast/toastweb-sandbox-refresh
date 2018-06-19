@@ -23,7 +23,6 @@ END_AUTH_TOKEN = '"'
 RESTAURANT_ID_FOOTER_KEY = 'Restaurant Id'
 SET_LEAF_ID_FOOTER_KEY = 'Set Leaf Id'
 
-
 context = ssl.create_default_context()
 context.check_hostname = False
 context.verify_mode = ssl.CERT_NONE
@@ -63,7 +62,7 @@ def switch_restaurant(guid):
 def http(url_path, data=None, query_params=None):
     url = config['toastweb.url'] + url_path
     if query_params:
-        url = url + '?' + urllib.urlencode(query_params)
+        url = url + '?' + urllib.urlencode(query_params, doseq=True)
     if data:
         response = opener.open(url, urllib.urlencode(data, doseq=True))
     else:
@@ -134,5 +133,4 @@ class RestaurantUserPermissionsExtractor(HTMLParser):
                 self.permissions[name] = sorted(values)
 
     def should_include(self, name):
-        return len(filter(lambda x: name.lower().find(x) >-1, ['permissions', 'job','state']))>0
-
+        return len(filter(lambda x: name.lower().find(x) > -1, ['permissions', 'job', 'state'])) > 0
