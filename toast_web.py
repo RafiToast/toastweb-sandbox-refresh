@@ -20,8 +20,8 @@ config = load_config()
 START_AUTH_TOKEN = 'authenticityToken" value="'
 END_AUTH_TOKEN = '"'
 
-START_RESTAURANT_ID = 'Restaurant Id: <span class="auto-select"><b>'
-END_RESTAURANT_ID = '<'
+RESTAURANT_ID_FOOTER_KEY = 'Restaurant Id'
+SET_LEAF_ID_FOOTER_KEY = 'Set Leaf Id'
 
 context = ssl.create_default_context()
 context.check_hostname = False
@@ -50,13 +50,13 @@ def login_page():
 def auth(auth_token):
     data = {'authenticityToken': auth_token, 'password': config['admin.password'], 'email': config['admin.email']}
     body = http('/authenticate', data)
-    if body.find('logged-in')==-1:
+    if body.find('logged-in') == -1:
         raise ValueError('Authentication failed, check admin email and password in config is correct')
 
 
 def switch_restaurant(guid):
     body = http('/account/switchrestaurant', query_params={'guid': guid})
-    return get_text_snip(body, START_RESTAURANT_ID, END_RESTAURANT_ID)
+    return get_restaurant_data_from_footer(body, RESTAURANT_ID_FOOTER_KEY)
 
 
 def http(url_path, data=None, query_params=None):
@@ -64,7 +64,7 @@ def http(url_path, data=None, query_params=None):
     if query_params:
         url = url + '?' + urllib.urlencode(query_params)
     if data:
-        response = opener.open(url, urllib.urlencode(data))
+        response = opener.open(url, urllib.urlencode(data, doseq=True))
     else:
         response = opener.open(url)
     assert response.code == 200
@@ -75,6 +75,14 @@ def get_text_snip(body, start, end):
     start = body.index(start) + len(start)
     end = body.index(end, start)
     return body[start:end]
+
+
+def get_restaurant_data_from_footer(body, key):
+    footer_start = body.index('footer-row')
+    row_start = body.index(key, footer_start)
+    value_start = body.index('<b>', row_start) + 3
+    value_end = body.index('<', value_start)
+    return body[value_start:value_end]
 
 
 class RestaurantGuidExtractor(HTMLParser):
@@ -117,7 +125,14 @@ class RestaurantUserPermissionsExtractor(HTMLParser):
     def handle_starttag(self, startTag, attrs):
         if startTag == 'input':
             attrs_map = dict((x, y) for x, y in attrs)
-            if attrs_map.get('name', '').startswith('permissions') and attrs_map.get('checked') == 'checked':
-                values = self.permissions.get(attrs_map['name'], [])
-                values.append(attrs_map['value'])
-                self.permissions[attrs_map['name']] = sorted(values)
+            name= attrs_map.get('name', '')
+            if name.startswith('permissions') and (
+                    attrs_map.get('checked') == 'checked' or attrs_map.get('type') == 'hidden'):
+                if name.startswith('permissionsLevel'):
+                    self.permissions[name] = attrs_map['value']
+                else:
+                    values = self.permissions.get(name, [])
+                    values.append(str(attrs_map['value']))
+                    self.permissions[name] = sorted(values)
+            if name.startswith('state'):
+                self.permissions[name] = attrs_map['value']

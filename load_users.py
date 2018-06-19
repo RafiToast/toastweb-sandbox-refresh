@@ -46,9 +46,12 @@ def get_edit_url(restaurant_guid, email):
 
 def load_permissions(edit_url):
     response = http(edit_url)
+    permissioned_group = get_restaurant_data_from_footer(response, SET_LEAF_ID_FOOTER_KEY)
     parser = RestaurantUserPermissionsExtractor()
     parser.feed(response)
-    return parser.permissions
+    permissions = parser.permissions
+    permissions['permissionedGroup'] = permissioned_group
+    return permissions
 
 
 def load_emails():
@@ -69,7 +72,7 @@ def output_users(users):
     file_path = config['users.filepath']
     print "\nSaving user data to %s" % file_path
     with open(file_path, 'w') as users_file:
-        json.dump(users, users_file)
+        json.dump(users, users_file, sort_keys=True, indent=4)
 
 
 if __name__ == '__main__':
