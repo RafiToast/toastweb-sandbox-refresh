@@ -41,7 +41,7 @@ def get_edit_url(restaurant_guid, email):
     employees = http('/restaurants/users')
     url_extractor = RestaurantEmployeeUrlExtractor(email)
     url_extractor.feed(employees)
-    return url_extractor.url.replace('show', 'edit')
+    return url_extractor.url.replace('show', 'edit').replace('delete','edit')
 
 
 def load_permissions(edit_url):
