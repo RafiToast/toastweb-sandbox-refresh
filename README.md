@@ -16,3 +16,8 @@ This will output data for the emails configured in the above step to *users.json
 Run the command `python create_users.py`
 
 This will take the data from *users.json* and use it to recreate all the users.
+
+
+## Debugging
+
+Add the parameter *debug* at the end of the load/create commands

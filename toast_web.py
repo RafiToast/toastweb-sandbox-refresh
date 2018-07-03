@@ -2,6 +2,7 @@ import urllib
 import urllib2
 import cookielib
 import ssl
+import sys
 from HTMLParser import HTMLParser
 
 
@@ -16,6 +17,9 @@ def load_config():
 
 
 config = load_config()
+
+debug_mode = config.get('debug','') == 'true' or sys.argv[-1] == 'debug'
+
 
 START_AUTH_TOKEN = 'authenticityToken" value="'
 END_AUTH_TOKEN = '"'
@@ -63,6 +67,7 @@ def http(url_path, data=None, query_params=None):
     url = config['toastweb.url'] + url_path
     if query_params:
         url = url + '?' + urllib.urlencode(query_params, doseq=True)
+    if debug_mode:  print url
     if data:
         response = opener.open(url, urllib.urlencode(data, doseq=True))
     else:
@@ -83,6 +88,13 @@ def get_restaurant_data_from_footer(body, key):
     value_start = body.index('<b>', row_start) + 3
     value_end = body.index('<', value_start)
     return body[value_start:value_end]
+
+def dedupe(input):
+  output = []
+  for x in input:
+    if x not in output:
+      output.append(x)
+  return output
 
 
 class RestaurantGuidExtractor(HTMLParser):
@@ -112,7 +124,7 @@ class RestaurantEmployeeUrlExtractor(HTMLParser):
             self._last_url = attrs_map.get('href')
 
     def handle_data(self, data):
-        if data == self.email:
+        if data == self.email and not(self.url):
             self.url = self._last_url
 
 
@@ -121,6 +133,8 @@ class RestaurantUserPermissionsExtractor(HTMLParser):
     def __init__(self):
         self.reset()
         self.permissions = {}
+        self.permission_sub_groups=[]
+        self.user_guid = None
 
     def handle_starttag(self, startTag, attrs):
         if startTag == 'input':
@@ -131,6 +145,12 @@ class RestaurantUserPermissionsExtractor(HTMLParser):
                 values = self.permissions.get(name, [])
                 values.append(str(attrs_map['value']))
                 self.permissions[name] = sorted(values)
+            if attrs_map.get('name',None) == 'user.guid':
+                self.user_guid = attrs_map['value']
+        if startTag =='div':
+            attrs_map = dict((x, y) for x, y in attrs)
+            if attrs_map.get('id','').startswith('permissions-container'):
+                self.permission_sub_groups.append(attrs_map.get('data-set-id',None))
 
     def should_include(self, name):
         return len(filter(lambda x: name.lower().find(x) > -1, ['permissions', 'job', 'state'])) > 0

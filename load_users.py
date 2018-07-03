@@ -2,6 +2,9 @@ from toast_web import *
 import json
 
 
+processed_sets = []
+
+
 def main():
     users = {}
     auth_token = login_and_get_auth_token()
@@ -23,7 +26,7 @@ def get_restaurants(auth_token, email):
         for restaurant_guid in restaurant_guids:
             print '\tLoading permissions for restaurant %s' % restaurant_guid
             switch_restaurant(restaurant_guid)
-            permissions = load_permissions(edit_url)
+            permissions = load_permissions(auth_token, edit_url)
             restaurants[restaurant_guid] = {'permissions': permissions}
     return restaurants
 
@@ -41,17 +44,41 @@ def get_edit_url(restaurant_guid, email):
     employees = http('/restaurants/users')
     url_extractor = RestaurantEmployeeUrlExtractor(email)
     url_extractor.feed(employees)
-    return url_extractor.url.replace('show', 'edit').replace('delete','edit')
+    url = url_extractor.url.replace('show', 'edit')
+    if debug_mode:  print '\tUsing edit url %s' % (url)
+    return url
 
 
-def load_permissions(edit_url):
+def load_permissions(auth_token, edit_url):
     response = http(edit_url)
-    permissioned_group = get_restaurant_data_from_footer(response, SET_LEAF_ID_FOOTER_KEY)
+    set_leaf = get_restaurant_data_from_footer(response, SET_LEAF_ID_FOOTER_KEY)
     parser = RestaurantUserPermissionsExtractor()
     parser.feed(response)
     permissions = parser.permissions
-    permissions['permissionedGroup'] = permissioned_group
+    permissioned_group = [set_leaf] + parser.permission_sub_groups
+
+    if len(parser.permission_sub_groups) > 0:
+        sub_permissions = load_sub_permissions(auth_token, permissioned_group, parser)
+        permissions.update(sub_permissions)
+    permissions['permissionedGroup'] = dedupe(permissioned_group)
+
     return permissions
+
+
+def load_sub_permissions(auth_token, permissioned_group, parser):
+    sub_permissions = {}
+    data = {'authenticityToken': auth_token, 'permissionedGroup': permissioned_group}
+    data.update(parser.permissions)
+    for set_id in parser.permission_sub_groups:
+        if set_id not in processed_sets:
+            data = {'authenticityToken': auth_token, 'permissionedGroup':permissioned_group}
+            data.update(parser.permissions)
+            response = http('/restaurants/users/showPermission',data,{'guid':parser.user_guid, 'set_id':set_id})
+            sub_parser = RestaurantUserPermissionsExtractor()
+            sub_parser.feed(response)
+            sub_permissions.update(sub_parser.permissions)
+            processed_sets.append(set_id)
+    return sub_permissions
 
 
 def load_emails():
