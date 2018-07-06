@@ -21,13 +21,16 @@ def invite_user(auth_token, email, restaurant_id, permissions):
     data = {'authenticityToken': auth_token, 'restaurantId': restaurant_id, 'invite': 'true'}
     data['user.email'] = email
     data.update(permissions)
-    response = http('/restaurants/users/invite', data, {'restaurantId':restaurant_id})
-    if response.find(SUCCESS_TEXT) > -1:
-        print '\t\t %s' % SUCCESS_TEXT
-    elif response.find(ALREADY_EXISTS) > -1:
-        print '\t\t A user with that email already exists'
-    else:
-        print '\t\t Problem inviting user, check server logs'
+    try:
+        response = http('/restaurants/users/invite', data, {'restaurantId':restaurant_id})
+        if response.find(SUCCESS_TEXT) > -1:
+            print '\t\t %s' % SUCCESS_TEXT
+        elif response.find(ALREADY_EXISTS) > -1:
+            print '\t\t A user with that email already exists'
+        else:
+            print '\t\t Problem inviting user, check server logs'
+    except Exception as e:
+        print 'Failed to invite user: %s' % (e)
 
 
 def load_users():
