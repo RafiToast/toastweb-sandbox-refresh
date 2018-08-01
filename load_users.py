@@ -89,7 +89,7 @@ def load_emails():
         with open(file_path, 'r') as emails_file:
             for line in emails_file.readlines():
                 if len(line.strip()) > 0 and line[0] != '#':
-                    emails.append(line.strip())
+                    emails.append(line.strip().lower())
     except IOError as e:
         raise ValueError('Unable to access emails file at %s' % file_path)
     return emails
